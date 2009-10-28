@@ -254,74 +254,96 @@ ERR_HND:
 int cwiid_close(cwiid_wiimote_t *wiimote)
 {
 	void *pthread_ret;
+    int retval = 0; /* No error == 0, error != 0 */
 
     /* Stop rumbling, otherwise wiimote continues to rumble for
        few seconds after closing the connection! There should be no
        need to check if stopping fails: we are closing the connection
        in any case. */
-    if (wiimote->state.rumble)
-        cwiid_set_rumble(wiimote, 0);
+    if (wiimote->state.rumble) {
+      if (cwiid_set_rumble(wiimote, 0)) {
+        retval = retval ? retval : -1; /* Ensures that different return codes
+                                          can be used and the first non-zero
+                                          return value is returned. */
+      }
+    }
 
 	/* Cancel and join router_thread and status_thread */
 	if (pthread_cancel(wiimote->router_thread)) {
+        retval = retval ? retval : -1;
 		/* if thread quit abnormally, would have printed it's own error */
 	}
 	if (pthread_join(wiimote->router_thread, &pthread_ret)) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Thread join error (router thread)");
 	}
 	else if (!((pthread_ret == PTHREAD_CANCELED) || (pthread_ret == NULL))) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Bad return value from router thread");
 	}
 
 	if (pthread_cancel(wiimote->status_thread)) {
+        retval = retval ? retval : -1;
 		/* if thread quit abnormally, would have printed it's own error */
 	}
 	if (pthread_join(wiimote->status_thread, &pthread_ret)) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Thread join error (status thread)");
 	}
 	else if (!((pthread_ret == PTHREAD_CANCELED) || (pthread_ret == NULL))) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Bad return value from status thread");
 	}
 
 	if (wiimote->mesg_callback) {
 		if (cancel_mesg_callback(wiimote)) {
+            retval = retval ? retval : -1;
 			/* prints it's own errors */
 		}
 	}
 
 	if (cancel_rw(wiimote)) {
+        retval = retval ? retval : -1;
 		/* prints it's own errors */
 	}
 
 	/* Close sockets */
 	if (close(wiimote->int_socket)) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Socket close error (interrupt channel)");
 	}
 	if (close(wiimote->ctl_socket)) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Socket close error (control channel)");
 	}
 	/* Close Pipes */
 	if (close(wiimote->mesg_pipe[0]) || close(wiimote->mesg_pipe[1])) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Pipe close error (mesg pipe)");
 	}
 	if (close(wiimote->status_pipe[0]) || close(wiimote->status_pipe[1])) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Pipe close error (status pipe)");
 	}
 	if (close(wiimote->rw_pipe[0]) || close(wiimote->rw_pipe[1])) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Pipe close error (rw pipe)");
 	}
 	/* Destroy mutexes */
 	if (pthread_mutex_destroy(&wiimote->state_mutex)) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Mutex destroy error (state)");
 	}
 	if (pthread_mutex_destroy(&wiimote->rw_mutex)) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Mutex destroy error (rw)");
 	}
 	if (pthread_mutex_destroy(&wiimote->rpt_mutex)) {
+        retval = retval ? retval : -1;
 		cwiid_err(wiimote, "Mutex destroy error (rpt)");
 	}
 
 	free(wiimote);
 
-	return 0;
+	return retval;
 }

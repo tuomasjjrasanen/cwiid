@@ -442,7 +442,8 @@ void message(GtkMessageType type, const gchar *message, GtkWindow *parent)
 {
 	GtkWidget *dialog;
 
-	dialog = gtk_message_dialog_new(parent, 0, type, GTK_BUTTONS_OK, message);
+	dialog = gtk_message_dialog_new(parent, 0, type, GTK_BUTTONS_OK, "%s",
+                                        message);
 	gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
 }

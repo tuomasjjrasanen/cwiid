@@ -74,10 +74,10 @@ struct wmplugin_data *wmplugin_exec(int mesg_count, union cwiid_mesg mesg[])
 {
 	static int src_index = -1;
 	static int debounce = 0;
-	static uint8_t old_flag;
+	/* static uint8_t old_flag; */
 
 	int i;
-	uint8_t flag;
+	/* uint8_t flag; */
 	struct cwiid_ir_mesg *ir_mesg;
 
 	ir_mesg = NULL;

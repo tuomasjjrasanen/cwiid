@@ -21,6 +21,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <errno.h>
 #include "cwiid_internal.h"
 
 int cwiid_command(cwiid_wiimote_t *wiimote, enum cwiid_command command,
@@ -48,8 +49,6 @@ int cwiid_command(cwiid_wiimote_t *wiimote, enum cwiid_command command,
 	return ret;
 }
 
-/* TODO: fix error reporting - this is public now and
- * should report its own errors */
 int cwiid_send_rpt(cwiid_wiimote_t *wiimote, uint8_t flags, uint8_t report,
                    size_t len, const void *data)
 {
@@ -69,6 +68,7 @@ int cwiid_send_rpt(cwiid_wiimote_t *wiimote, uint8_t flags, uint8_t report,
 	}
 
 	if (write(wiimote->ctl_socket, buf, len+2) != (ssize_t)(len+2)) {
+		cwiid_err(wiimote, "cwiid_send_rpt: write: %s", strerror(errno));
 		goto err;
 	}
 	else if (verify_handshake(wiimote)) {

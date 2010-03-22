@@ -54,6 +54,7 @@ int cwiid_send_rpt(cwiid_wiimote_t *wiimote, uint8_t flags, uint8_t report,
                    size_t len, const void *data)
 {
 	unsigned char *buf;
+	int retval = -1;
 
 	if ((buf = malloc((len*2) * sizeof *buf)) == NULL) {
 		cwiid_err(wiimote, "Memory allocation error (mesg array)");
@@ -68,15 +69,16 @@ int cwiid_send_rpt(cwiid_wiimote_t *wiimote, uint8_t flags, uint8_t report,
 	}
 
 	if (write(wiimote->ctl_socket, buf, len+2) != (ssize_t)(len+2)) {
-		free(buf);
-		return -1;
+		goto err;
 	}
 	else if (verify_handshake(wiimote)) {
-		free(buf);
-		return -1;
+		goto err;
 	}
 
-	return 0;
+	retval = 0;
+err:
+	free(buf);
+	return retval;
 }
 
 int cwiid_request_status(cwiid_wiimote_t *wiimote)
